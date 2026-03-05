@@ -41,7 +41,7 @@ nano .env
 
 # 5. 실행
 cd /opt/staff-app
-docker compose up -d --build  # 또는 docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ## 2) Nginx 리버스프록시와의 연결
@@ -55,11 +55,11 @@ docker compose up -d --build  # 또는 docker-compose up -d --build
 cd /opt/staff-app
 
 # 컨테이너 상태 확인
-docker compose ps  # 또는 docker-compose ps
+docker compose ps
 
 # 로그 확인 (오류 추적)
-docker compose logs -f db  # 또는 docker-compose logs -f db
-docker compose logs -f web  # 또는 docker-compose logs -f web
+docker compose logs -f db
+docker compose logs -f web
 
 # healthcheck 상태 확인
 docker inspect --format='{{json .State.Health}}' staff-db | jq
@@ -73,13 +73,5 @@ curl -I http://staff.readingtown.cn
 curl -I https://staff.readingtown.cn
 
 # DB 연결 확인
-docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'  # 또는 docker-compose exec db ...
+docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
 ```
-
-
-## 4) 운영 환경 주의사항 (중요)
-
-- 일부 서버는 `docker compose` 서브커맨드가 없고 `docker-compose`만 동작합니다.
-- 일부 서버는 80/443 포트를 컨테이너 프록시(Nginx Proxy Manager/Traefik/Caddy)가 점유하여 **host nginx(systemd)** 가 inactive일 수 있습니다.
-- 이 경우 host nginx 설정/재시작을 시도하지 말고, 프록시 컨테이너에서 `staff.readingtown.cn -> 127.0.0.1:3001` 라우팅을 추가하세요.
-- `scripts/deploy_staff.sh`는 위 상황을 자동으로 감지하고 host nginx 단계는 건너뜁니다.

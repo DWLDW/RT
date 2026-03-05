@@ -12,7 +12,7 @@ async function loginAction(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      throw new Error('로그인 실패: 이메일 또는 비밀번호를 확인하세요.');
+      return { error: '로그인 실패: 이메일 또는 비밀번호를 확인하세요.' };
     }
     throw error;
   }

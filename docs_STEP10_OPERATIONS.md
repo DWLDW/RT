@@ -182,38 +182,3 @@ curl -I https://staff.readingtown.cn
 # 기존 LMS 공존 확인
 curl -I https://lms.readingtown.cn
 ```
-
-
-## 7) 빌드 실패(ESLint/loginAction) 빠른 복구
-
-서버 코드가 구버전일 때 아래 스크립트로 최신 코드 동기화 + 빌드/실행을 한 번에 수행합니다.
-
-```bash
-cd /opt/staff-app
-bash scripts/recover_server.sh
-```
-
-포함 내용:
-- `git fetch/reset --hard origin/main`으로 최신 코드 강제 동기화
-- `.eslintrc.json`에 `next/typescript` 잔존 여부 점검
-- `app/(auth)/login/page.tsx`에서 `return { error: ... }` 잔존 여부 점검
-- `docker compose`/`docker-compose` 자동 선택 후 `build --no-cache && up -d` 실행
-
-
-### recover_server.sh가 없다고 나올 때
-
-```bash
-cd /opt/staff-app
-git fetch --all --prune
-git checkout main
-git reset --hard origin/main
-
-# 최신 코드 동기화 후 실행
-bash scripts/recover_server.sh
-```
-
-### docker compose -f 가 unknown shorthand flag로 실패할 때
-
-서버가 `docker compose`를 지원하지 않고 `docker-compose`만 지원하는 환경일 수 있습니다.
-이 저장소의 최신 `scripts/deploy_staff.sh`, `scripts/recover_server.sh`는 자동 감지하므로
-반드시 최신 코드를 `git reset --hard origin/main`으로 맞춘 뒤 재실행하세요.
