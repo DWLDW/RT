@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+}
+
+enum EvalItemType {
+  SCORE
+  CHECK
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  name         String
+  email        String?  @unique
+  passwordHash String
+  role         Role     @default(TEACHER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  classes      Class[]
+  lessons      Lesson[]
+}
+
+model Student {
+  id            String               @id @default(cuid())
+  studentCode   String?              @unique
+  name          String
+  level         String?
+  grade         String?
+  parentContact String?
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  enrollments   Enrollment[]
+  attendance    Attendance[]
+  evaluations   Evaluation[]
+  aiFeedback    AiFeedback[]
+  summaryCache  StudentSummaryCache?
+}
+
+model Class {
+  id          String               @id @default(cuid())
+  name        String
+  level       String?
+  description String?
+  teacherId   String
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  teacher               User                 @relation(fields: [teacherId], references: [id])
+  enrollments           Enrollment[]
+  schedules             Schedule[]
+  lessons               Lesson[]
+  materials             Material[]
+  evaluationTemplates   EvaluationTemplate[]
+}
+
+model Enrollment {
+  id          String    @id @default(cuid())
+  classId     String
+  studentId   String
+  enrolledAt  DateTime  @default(now())
+  withdrawnAt DateTime?
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  classId   String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  room      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId, dayOfWeek])
+}
+
+model Lesson {
+  id            String    @id @default(cuid())
+  classId       String
+  teacherId     String
+  lessonDate    DateTime
+  title         String
+  topic         String?
+  notes         String?
+  sharedSummary String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher     User          @relation(fields: [teacherId], references: [id])
+  attendance  Attendance[]
+  evaluations Evaluation[]
+  materials   Material[]
+  aiFeedback  AiFeedback[]
+
+  @@index([classId, lessonDate])
+}
+
+model Attendance {
+  id         String           @id @default(cuid())
+  lessonId   String
+  studentId  String
+  status     AttendanceStatus @default(PRESENT)
+  memo       String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  lesson  Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, studentId])
+}
+
+model EvaluationTemplate {
+  id          String            @id @default(cuid())
+  name        String
+  classId     String?
+  level       String?
+  description String?
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  class       Class?            @relation(fields: [classId], references: [id], onDelete: SetNull)
+  items       EvaluationItem[]
+  evaluations Evaluation[]
+
+  @@index([classId])
+  @@index([level])
+}
+
+model EvaluationItem {
+  id          String       @id @default(cuid())
+  templateId  String
+  name        String
+  description String?
+  itemType    EvalItemType
+  maxScore    Int?
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  template EvaluationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  results  EvaluationResult[]
+
+  @@index([templateId, sortOrder])
+}
+
+model Evaluation {
+  id             String   @id @default(cuid())
+  lessonId       String
+  studentId      String
+  templateId     String
+  generalComment String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  lesson   Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student  Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  template EvaluationTemplate @relation(fields: [templateId], references: [id])
+  results  EvaluationResult[]
+
+  @@unique([lessonId, studentId])
+  @@index([templateId])
+}
+
+model EvaluationResult {
+  id           String   @id @default(cuid())
+  evaluationId String
+  itemId       String
+  score        Int?
+  checked      Boolean?
+  comment      String?
+
+  evaluation Evaluation     @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  item       EvaluationItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([evaluationId, itemId])
+}
+
+model Material {
+  id               String    @id @default(cuid())
+  title            String
+  description      String?
+  filePath         String
+  originalFileName String
+  mimeType         String?
+  classId          String?
+  lessonId         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  class  Class?  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([lessonId])
+}
+
+model AiFeedback {
+  id            String   @id @default(cuid())
+  lessonId      String
+  studentId     String
+  inputHash     String
+  promptSummary String?
+  content       String
+  createdAt     DateTime @default(now())
+
+  lesson  Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, studentId, inputHash])
+  @@index([studentId, createdAt])
+}
+
+model StudentSummaryCache {
+  id          String   @id @default(cuid())
+  studentId   String   @unique
+  summaryText String
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
