@@ -44,3 +44,19 @@ curl -I http://127.0.0.1:3001/login
 
 - bcrypt/edge runtime 관련 메시지는 대개 **경고**이며, 실제 실패 원인은 빌드 타입/ESLint 오류인 경우가 대부분입니다.
 - `npm install`이 오래 걸리는 서버는 네트워크/레지스트리 상황에 따라 10분 이상 소요될 수 있습니다.
+
+
+## 5) 저장소를 완전히 클린하게 다시 시작할 때
+
+서버 레포가 꼬였거나 충돌 마커가 남은 경우, 아래 스크립트로 **중지 -> 백업 -> 삭제 -> 재클론 -> 재배포**를 한 번에 수행할 수 있습니다.
+
+```bash
+cd /opt/staff-app
+bash scripts/clean_rebootstrap.sh
+```
+
+옵션 예시:
+
+```bash
+TARGET_DIR=/opt/staff-app REPO_URL=https://github.com/DWLDW/RT.git BRANCH=main bash scripts/clean_rebootstrap.sh
+```

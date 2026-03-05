@@ -5,9 +5,9 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const student = await prisma.student.findUnique({
     where: { id: params.id },
     include: {
-      attendances: { orderBy: { classDate: 'desc' } },
+      attendance: { orderBy: { createdAt: 'desc' } },
       evaluations: { orderBy: { createdAt: 'desc' } },
-      feedbacks: { orderBy: { createdAt: 'desc' } }
+      aiFeedback: { orderBy: { createdAt: 'desc' } }
     }
   });
 
